@@ -69,7 +69,7 @@ export default function ClaimNFTPanel() {
         {selectedId && <SelectedNFT id={selectedId} />}
 
         {/* Company Info Box - Aligned with left part of SelectedNFT */}
-        <div className="mt-8 mb-8 flex flex-col lg:flex-row lg:gap-8">
+        <div className="mt-8 mb-10 flex flex-col lg:flex-row lg:gap-8">
           <div className="lg:w-1/2">
             <CompanyInfoBox />
           </div>

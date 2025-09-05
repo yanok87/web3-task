@@ -16,7 +16,7 @@ export default function NFTGallery({ nfts, onSelectNFT }: NFTGalleryProps) {
   };
   return (
     <div className="mb-8">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <h2 className="text-xl font-bold text-gray-900 mb-6">
         More from this collection
       </h2>
       <div className="flex gap-4 overflow-x-auto pb-4">
@@ -37,7 +37,7 @@ export default function NFTGallery({ nfts, onSelectNFT }: NFTGalleryProps) {
               <p className="text-sm font-medium text-gray-900">
                 {nft.metadata.name}
               </p>
-              <p className="text-sm text-gray-500">0.0 ETH</p>
+              <p className="text-xs text-gray-500">0.0 ETH</p>
             </div>
           </div>
         ))}

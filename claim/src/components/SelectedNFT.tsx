@@ -82,18 +82,18 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
       {/* Right Column - NFT Details */}
       <div className="lg:w-1/2 relative">
         {/* Action Icons */}
-        <div className="absolute top-6 right-6 flex space-x-2">
-          <button className="text-gray-400 hover:text-gray-600">
-            <img src="/src/assets/share.svg" alt="Share" className="w-5 h-5" />
+        <div className="absolute  right-6 flex space-x-2">
+          <button className="w-8 h-8 bg-white border border-gray-300 shadow-sm flex items-center justify-center hover:bg-gray-50">
+            <img src="/src/assets/share.svg" alt="Share" className="w-4 h-4" />
           </button>
-          <button className="text-gray-400 hover:text-gray-600">
-            <img src="/src/assets/like.svg" alt="Like" className="w-5 h-5" />
+          <button className="w-8 h-8 bg-white border border-gray-300 shadow-sm flex items-center justify-center hover:bg-gray-50">
+            <img src="/src/assets/like.svg" alt="Like" className="w-4 h-4" />
           </button>
         </div>
 
         {/* Title and Ownership */}
         <div className="mb-4">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">
             {nft.metadata.name}
           </h1>
           <p className="text-gray-500 text-xs">You own 0</p>
