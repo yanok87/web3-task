@@ -5,6 +5,7 @@ import { config } from "./config/wagmi";
 import Header from "./components/Header";
 import ClaimNFTPanel from "./components/ClaimNFTPanel";
 import Footer from "./components/Footer";
+import { ClaimedNFTsProvider } from "./contexts/ClaimedNFTsContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,14 +22,16 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <div className="min-h-screen flex flex-col">
-          <Header />
-          <main className="flex-1">
-            <ClaimNFTPanel />
-          </main>
-          <Footer />
-        </div>
-        <ReactQueryDevtools initialIsOpen={false} />
+        <ClaimedNFTsProvider>
+          <div className="min-h-screen flex flex-col">
+            <Header />
+            <main className="flex-1">
+              <ClaimNFTPanel />
+            </main>
+            <Footer />
+          </div>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </ClaimedNFTsProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );

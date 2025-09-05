@@ -1,5 +1,21 @@
 import { BASE_URL, ENDPOINTS } from "./urls";
-import type { NFT } from "../types";
+
+export interface NFT {
+  chainId: number;
+  id: string;
+  metadata: {
+    name: string;
+    description: string;
+    image: string;
+    attributes: {
+      trait_type: string;
+      value: string;
+    }[];
+  };
+  tokenAddress: string;
+  tokenURI: string;
+  type: string;
+}
 
 /**
  * Fetch all NFTs from the API

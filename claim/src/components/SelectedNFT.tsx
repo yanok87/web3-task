@@ -1,11 +1,22 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchNFTById } from "../api";
+import ClaimButton from "./ClaimButton";
+import { useAccount, useReadContract } from "wagmi";
+import { getContractAddress, isSupportedChain } from "../config/contracts";
+import { claimableNFTAbi } from "../abi/ClaimableNFT";
+import { useEffect, useState } from "react";
+import { useClaimedNFTs } from "../contexts/ClaimedNFTsContext";
 
 interface SelectedNFTProps {
   id: string;
 }
 
 export default function SelectedNFT({ id }: SelectedNFTProps) {
+  const { address, chainId } = useAccount();
+  const queryClient = useQueryClient();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const { isClaimed: isClaimedInContext } = useClaimedNFTs();
+
   const {
     data: nft,
     isLoading,
@@ -14,6 +25,89 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
     queryKey: ["nft", id],
     queryFn: () => fetchNFTById(id),
   });
+
+  // Check user's balance for this specific NFT
+  const { data: balance, refetch: refetchBalance } = useReadContract({
+    address:
+      address && chainId && isSupportedChain(chainId)
+        ? getContractAddress(chainId, "ClaimableNFT")
+        : undefined,
+    abi: claimableNFTAbi,
+    functionName: "balanceOf",
+    args: address ? [address, BigInt(id)] : undefined,
+    query: {
+      refetchOnWindowFocus: true,
+      staleTime: 0, // Always consider data stale
+      gcTime: 0, // Don't cache the data
+    },
+  });
+
+  // Listen for NFT claimed events and refetch balance
+  useEffect(() => {
+    const handleNFTClaimed = (event: CustomEvent) => {
+      const { tokenId, address: claimedAddress } = event.detail;
+      console.log(
+        `SelectedNFT ${id} received claim event for token ${tokenId} by ${claimedAddress}`
+      );
+
+      // If this is the same NFT and same address, refetch the balance
+      if (tokenId === id && claimedAddress === address) {
+        console.log(`Refetching balance for NFT ${id}`);
+        console.log(`Current balance before refetch:`, balance);
+
+        // Force a new query by updating the refresh key
+        setRefreshKey((prev) => prev + 1);
+        console.log(`Updated refresh key to force new query`);
+
+        // Clear all queries and force fresh fetch
+        queryClient.clear();
+        console.log(`Cleared all queries`);
+
+        // Wait a bit then refetch
+        setTimeout(() => {
+          refetchBalance()
+            .then((result) => {
+              console.log(`Balance refetch result:`, result);
+            })
+            .catch((error) => {
+              console.error(`Balance refetch error:`, error);
+            });
+        }, 100);
+      }
+    };
+
+    window.addEventListener("nftClaimed", handleNFTClaimed as EventListener);
+
+    return () => {
+      window.removeEventListener(
+        "nftClaimed",
+        handleNFTClaimed as EventListener
+      );
+    };
+  }, [id, address, refetchBalance]);
+
+  // Debug logging
+  console.log(`SelectedNFT ${id} - balance:`, balance, "address:", address);
+  console.log(`SelectedNFT query config:`, {
+    address:
+      address && chainId && isSupportedChain(chainId)
+        ? getContractAddress(chainId, "ClaimableNFT")
+        : undefined,
+    functionName: "balanceOf",
+    args: address ? [address, BigInt(id)] : undefined,
+  });
+
+  // Let's also check what the actual contract address is
+  const contractAddress =
+    address && chainId && isSupportedChain(chainId)
+      ? getContractAddress(chainId, "ClaimableNFT")
+      : undefined;
+  console.log(`SelectedNFT contract address:`, contractAddress);
+  console.log(`SelectedNFT chainId:`, chainId);
+  console.log(
+    `SelectedNFT isSupportedChain:`,
+    chainId ? isSupportedChain(chainId) : false
+  );
 
   if (isLoading) {
     return (
@@ -96,7 +190,14 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
           <h1 className="text-2xl font-bold text-gray-900 mb-1">
             {nft.metadata.name}
           </h1>
-          <p className="text-gray-500 text-xs">You own 0</p>
+          <p className="text-gray-500 text-xs">
+            You own{" "}
+            {address && chainId && isSupportedChain(chainId)
+              ? isClaimedInContext(id)
+                ? "1"
+                : (balance || 0n).toString()
+              : "0"}
+          </p>
         </div>
 
         {/* Description */}
@@ -129,9 +230,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             <div className="text-xl font-bold text-gray-900">Ξ 0 ETH</div>
           </div>
 
-          <button className="w-full bg-black hover:bg-gray-800 text-white py-1 px-3 text-sm transition-colors">
-            Claim Now
-          </button>
+          <ClaimButton id={id} />
         </div>
       </div>
     </div>
