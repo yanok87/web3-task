@@ -1,49 +1,58 @@
-import type { Connector } from "wagmi";
+import { useAccount, useBalance, useConnect, useDisconnect } from "wagmi";
+import { formatUnits } from "viem";
 
-interface WalletButtonProps {
-  connector: Connector;
-  onClick: () => void;
-  disabled?: boolean;
-}
+export default function WalletButton() {
+  const { address, isConnected } = useAccount();
+  const { data: balance } = useBalance({
+    address: address,
+  });
+  const { connect, connectors, isPending } = useConnect();
+  const { disconnect } = useDisconnect();
 
-export default function WalletButton({
-  connector,
-  onClick,
-  disabled,
-}: WalletButtonProps) {
-  const getWalletIcon = (name: string) => {
-    switch (name.toLowerCase()) {
-      case "metamask":
-        return "🦊";
-      case "injected":
-        return "💼";
-      default:
-        return "🔌";
+  const handleConnect = () => {
+    // Connect to the first available connector (MetaMask or injected)
+    const connector = connectors[0];
+    if (connector) {
+      connect({ connector });
     }
   };
 
-  const getWalletName = (name: string) => {
-    switch (name.toLowerCase()) {
-      case "injected":
-        return "Browser Wallet";
-      default:
-        return name;
-    }
-  };
+  if (isConnected) {
+    return (
+      <div className="flex items-center space-x-4">
+        {/* Balance */}
+        {balance && (
+          <span className="text-sm text-gray-700 font-medium">
+            {parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(
+              4
+            )}{" "}
+            {balance.symbol}
+          </span>
+        )}
+
+        {/* Address */}
+        <span className="text-sm text-gray-600 font-mono bg-gray-200 px-2 py-1 rounded">
+          {address?.slice(0, 6)}...{address?.slice(-4)}
+        </span>
+
+        {/* Disconnect Button */}
+        <button
+          onClick={() => disconnect()}
+          className="bg-gray-800 hover:bg-gray-900 text-white font-medium py-1 px-3 text-sm transition-colors"
+        >
+          Disconnect
+        </button>
+      </div>
+    );
+  }
 
   return (
     <button
-      onClick={onClick}
-      disabled={disabled}
-      className="w-full flex items-center justify-center space-x-3 py-4 px-6 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+      onClick={handleConnect}
+      disabled={isPending}
+      className="bg-gray-800 hover:bg-gray-900 text-white font-medium py-1 px-3 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <span className="text-2xl">{getWalletIcon(connector.name)}</span>
-      <span className="font-medium text-gray-900">
-        {getWalletName(connector.name)}
-      </span>
-      {disabled && (
-        <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      )}
+      {isPending ? "Connecting..." : "Connect Wallet"}
     </button>
   );
 }
