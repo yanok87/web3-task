@@ -22,7 +22,7 @@ export default function WalletButton() {
       <div className="flex items-center space-x-4">
         {/* Balance */}
         {balance && (
-          <span className="text-sm text-gray-700 font-medium">
+          <span className="text-xs text-gray-700">
             {parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(
               4
             )}{" "}
@@ -31,14 +31,14 @@ export default function WalletButton() {
         )}
 
         {/* Address */}
-        <span className="text-sm text-gray-600 font-mono bg-gray-200 px-2 py-1 rounded">
+        <span className="text-xs text-gray-600 font-mono bg-gray-200 px-2 py-1">
           {address?.slice(0, 6)}...{address?.slice(-4)}
         </span>
 
         {/* Disconnect Button */}
         <button
           onClick={() => disconnect()}
-          className="bg-gray-800 hover:bg-gray-900 text-white font-medium py-1 px-3 text-sm transition-colors"
+          className="bg-gray-800 hover:bg-gray-900 text-white py-1 px-3 text-xs transition-colors"
         >
           Disconnect
         </button>
@@ -50,7 +50,7 @@ export default function WalletButton() {
     <button
       onClick={handleConnect}
       disabled={isPending}
-      className="bg-gray-800 hover:bg-gray-900 text-white font-medium py-1 px-3 text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      className="bg-gray-800 hover:bg-gray-900 text-white py-1 px-3 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {isPending ? "Connecting..." : "Connect Wallet"}
     </button>
