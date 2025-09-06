@@ -26,7 +26,4 @@ export function isSupportedChain(chainId: number): boolean {
   return chainId in CONTRACT_ADDRESSES;
 }
 
-// Get the supported chain IDs
-export function getSupportedChainIds(): number[] {
-  return Object.keys(CONTRACT_ADDRESSES).map(Number);
-}
+
