@@ -68,13 +68,13 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     if (isConfirmed && hash) {
       setTxHash(hash);
 
-      // Refetch balance immediately
+      // Refetch NFTbalance immediately
       refetchBalance();
 
       // Invalidate all wagmi queries to refresh wallet balance and other data
       queryClient.invalidateQueries();
     }
-  }, [isConfirmed, hash, queryClient, address, refetchBalance]);
+  }, [isConfirmed, hash, queryClient, refetchBalance]);
 
   // Don't show button if user is not connected
   if (!address) {
