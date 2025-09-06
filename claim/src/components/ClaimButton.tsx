@@ -7,17 +7,17 @@ import {
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ClaimButtonProps {
   id: string;
-  onClaimSuccess?: () => void;
 }
 
-export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
+export default function ClaimButton({ id }: ClaimButtonProps) {
   const { address, chainId } = useAccount();
   const { writeContract, isPending, error, data: hash } = useWriteContract();
-  const [isClaimed, setIsClaimed] = useState(false);
   const [txHash, setTxHash] = useState<string>("");
+  const queryClient = useQueryClient();
 
   // Wait for transaction confirmation
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -26,7 +26,7 @@ export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
     });
 
   // Check contract for NFT balance
-  const { data: balance } = useReadContract({
+  const { data: balance, refetch: refetchBalance } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
@@ -38,13 +38,6 @@ export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
       enabled: !!address && !!chainId && isSupportedChain(chainId),
     },
   });
-
-  // Update local state when contract data changes
-  useEffect(() => {
-    if (balance !== undefined) {
-      setIsClaimed(balance > 0n);
-    }
-  }, [balance]);
 
   // Reset txHash when NFT ID changes
   useEffect(() => {
@@ -73,11 +66,15 @@ export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
   // Update local state when transaction is confirmed
   useEffect(() => {
     if (isConfirmed && hash) {
-      setIsClaimed(true);
       setTxHash(hash);
-      onClaimSuccess?.(); // Notify parent component
+
+      // Refetch balance immediately
+      refetchBalance();
+
+      // Invalidate all wagmi queries to refresh wallet balance and other data
+      queryClient.invalidateQueries();
     }
-  }, [isConfirmed, hash, onClaimSuccess]);
+  }, [isConfirmed, hash, queryClient, address, refetchBalance]);
 
   // Don't show button if user is not connected
   if (!address) {
@@ -103,7 +100,7 @@ export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
   }
 
   // Show claimed state if NFT is claimed
-  if (isClaimed) {
+  if (balance && balance > 0n) {
     return (
       <div className="space-y-2">
         <button

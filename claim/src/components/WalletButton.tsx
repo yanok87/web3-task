@@ -49,7 +49,7 @@ export default function WalletButton() {
         {balance && (
           <span className="text-xs text-gray-700">
             {parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(
-              4
+              10
             )}{" "}
             {balance.symbol}
           </span>

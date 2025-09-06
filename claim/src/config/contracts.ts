@@ -2,7 +2,7 @@
 export const CONTRACT_ADDRESSES = {
   // Base Sepolia testnet
   [84532]: {
-    ClaimableNFT: "0xCfF851B047da6431d228F0f8534B05166Ee88D13" as const,
+    ClaimableNFT: "0xc5B36881c9068750fa8b42448512ef3332CDA34b" as const,
   },
 } as const;
 

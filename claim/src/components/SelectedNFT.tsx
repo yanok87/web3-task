@@ -4,7 +4,6 @@ import ClaimButton from "./ClaimButton";
 import { useAccount, useReadContract } from "wagmi";
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
-import { useEffect, useState } from "react";
 import { getImageUrl } from "../utils/ipfs";
 
 interface SelectedNFTProps {
@@ -13,7 +12,6 @@ interface SelectedNFTProps {
 
 export default function SelectedNFT({ id }: SelectedNFTProps) {
   const { address, chainId } = useAccount();
-  const [isClaimed, setIsClaimed] = useState(false);
 
   // Check contract for NFT balance on mount
   const { data: balance } = useReadContract({
@@ -28,13 +26,6 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
       enabled: !!address && !!chainId && isSupportedChain(chainId),
     },
   });
-
-  // Update local state when contract data changes
-  useEffect(() => {
-    if (balance !== undefined) {
-      setIsClaimed(balance > 0n);
-    }
-  }, [balance]);
 
   const {
     data: nft,
@@ -110,7 +101,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             {nft.metadata.name}
           </h1>
           <p className="text-gray-500 text-xs">
-            You own {isClaimed ? "1" : "0"}
+            You own {balance && balance > 0n ? "1" : "0"}
           </p>
         </div>
 
@@ -144,7 +135,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             <div className="text-xl font-bold text-gray-900">Ξ 0 ETH</div>
           </div>
 
-          <ClaimButton id={id} onClaimSuccess={() => setIsClaimed(true)} />
+          <ClaimButton id={id} />
         </div>
       </div>
     </div>
