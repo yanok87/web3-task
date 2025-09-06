@@ -11,8 +11,7 @@ contract ClaimableNFT is ERC1155, Ownable {
     // Base URI for metadata
     string private _baseURI;
     
-    // Mapping to track claimed tokens per address
-    mapping(address => mapping(uint256 => bool)) private _claimed;
+    // Note: We use _balances from ERC1155 instead of separate _claimed mapping
     
     // Mapping to track total supply per token ID
     mapping(uint256 => uint256) private _totalSupply;
@@ -38,15 +37,12 @@ contract ClaimableNFT is ERC1155, Ownable {
      */
     function claim(uint256 id, uint256 amount) external {
         require(amount > 0, "Amount must be greater than 0");
-        require(!_claimed[msg.sender][id], "Token already claimed by this address");
+        require(balanceOf(msg.sender, id) == 0, "Token already claimed by this address");
         
         // Check max supply if set
         if (_maxSupply[id] > 0) {
             require(_totalSupply[id] + amount <= _maxSupply[id], "Exceeds max supply");
         }
-        
-        // Mark as claimed
-        _claimed[msg.sender][id] = true;
         
         // Update total supply
         _totalSupply[id] += amount;
@@ -64,7 +60,7 @@ contract ClaimableNFT is ERC1155, Ownable {
      * @return claimed Whether the token has been claimed
      */
     function hasClaimed(address account, uint256 id) external view returns (bool claimed) {
-        return _claimed[account][id];
+        return balanceOf(account, id) > 0;
     }
     
     /**
@@ -122,15 +118,12 @@ contract ClaimableNFT is ERC1155, Ownable {
         
         for (uint256 i = 0; i < ids.length; i++) {
             require(amounts[i] > 0, "Amount must be greater than 0");
-            require(!_claimed[msg.sender][ids[i]], "Token already claimed by this address");
+            require(balanceOf(msg.sender, ids[i]) == 0, "Token already claimed by this address");
             
             // Check max supply if set
             if (_maxSupply[ids[i]] > 0) {
                 require(_totalSupply[ids[i]] + amounts[i] <= _maxSupply[ids[i]], "Exceeds max supply");
             }
-            
-            // Mark as claimed
-            _claimed[msg.sender][ids[i]] = true;
             
             // Update total supply
             _totalSupply[ids[i]] += amounts[i];

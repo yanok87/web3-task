@@ -16,9 +16,7 @@ export default function ClaimNFTPanel() {
   } = useQuery({
     queryKey: ["nfts"],
     queryFn: fetchNFTs,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: false, // NFT list doesn't change often
   });
 
   // Set default selected ID to first NFT when data loads

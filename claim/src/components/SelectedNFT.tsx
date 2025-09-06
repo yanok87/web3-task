@@ -5,6 +5,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
 import { useEffect, useState } from "react";
+import { getImageUrl } from "../utils/ipfs";
 
 interface SelectedNFTProps {
   id: string;
@@ -71,14 +72,6 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
       </div>
     );
   }
-
-  // Convert IPFS URL to HTTP URL
-  const getImageUrl = (url: string) => {
-    if (url.startsWith("ipfs://")) {
-      return `https://ipfs.io/ipfs/${url.replace("ipfs://", "")}`;
-    }
-    return url;
-  };
 
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">

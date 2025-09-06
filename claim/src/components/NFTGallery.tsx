@@ -1,4 +1,5 @@
-import type { NFT } from "../types";
+import type { NFT } from "../api";
+import { getImageUrl } from "../utils/ipfs";
 
 interface NFTGalleryProps {
   nfts: NFT[];
@@ -7,13 +8,6 @@ interface NFTGalleryProps {
 }
 
 export default function NFTGallery({ nfts, onSelectNFT }: NFTGalleryProps) {
-  // Convert IPFS URL to HTTP URL
-  const getImageUrl = (url: string) => {
-    if (url.startsWith("ipfs://")) {
-      return `https://ipfs.io/ipfs/${url.replace("ipfs://", "")}`;
-    }
-    return url;
-  };
   return (
     <div className="mb-8">
       <h2 className="text-xl font-bold text-gray-900 mb-6">
