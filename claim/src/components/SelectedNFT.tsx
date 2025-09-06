@@ -15,14 +15,14 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
   const { address, chainId } = useAccount();
   const [isClaimed, setIsClaimed] = useState(false);
 
-  // Check contract for already claimed NFTs on mount
-  const { data: hasClaimed } = useReadContract({
+  // Check contract for NFT balance on mount
+  const { data: balance } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
         : undefined,
     abi: claimableNFTAbi,
-    functionName: "hasClaimed",
+    functionName: "balanceOf",
     args: address ? [address, BigInt(id)] : undefined,
     query: {
       enabled: !!address && !!chainId && isSupportedChain(chainId),
@@ -31,10 +31,10 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
 
   // Update local state when contract data changes
   useEffect(() => {
-    if (hasClaimed !== undefined) {
-      setIsClaimed(hasClaimed);
+    if (balance !== undefined) {
+      setIsClaimed(balance > 0n);
     }
-  }, [hasClaimed]);
+  }, [balance]);
 
   const {
     data: nft,
@@ -144,7 +144,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             <div className="text-xl font-bold text-gray-900">Ξ 0 ETH</div>
           </div>
 
-          <ClaimButton id={id} />
+          <ClaimButton id={id} onClaimSuccess={() => setIsClaimed(true)} />
         </div>
       </div>
     </div>

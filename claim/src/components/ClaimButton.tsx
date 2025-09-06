@@ -10,9 +10,10 @@ import { useEffect, useState } from "react";
 
 interface ClaimButtonProps {
   id: string;
+  onClaimSuccess?: () => void;
 }
 
-export default function ClaimButton({ id }: ClaimButtonProps) {
+export default function ClaimButton({ id, onClaimSuccess }: ClaimButtonProps) {
   const { address, chainId } = useAccount();
   const { writeContract, isPending, error, data: hash } = useWriteContract();
   const [isClaimed, setIsClaimed] = useState(false);
@@ -24,14 +25,14 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
       hash,
     });
 
-  // Check contract for already claimed NFTs
-  const { data: hasClaimed } = useReadContract({
+  // Check contract for NFT balance
+  const { data: balance } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
         : undefined,
     abi: claimableNFTAbi,
-    functionName: "hasClaimed",
+    functionName: "balanceOf",
     args: address ? [address, BigInt(id)] : undefined,
     query: {
       enabled: !!address && !!chainId && isSupportedChain(chainId),
@@ -40,10 +41,10 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
 
   // Update local state when contract data changes
   useEffect(() => {
-    if (hasClaimed !== undefined) {
-      setIsClaimed(hasClaimed);
+    if (balance !== undefined) {
+      setIsClaimed(balance > 0n);
     }
-  }, [hasClaimed]);
+  }, [balance]);
 
   // Reset txHash when NFT ID changes
   useEffect(() => {
@@ -74,8 +75,9 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     if (isConfirmed && hash) {
       setIsClaimed(true);
       setTxHash(hash);
+      onClaimSuccess?.(); // Notify parent component
     }
-  }, [isConfirmed, hash]);
+  }, [isConfirmed, hash, onClaimSuccess]);
 
   // Don't show button if user is not connected
   if (!address) {
