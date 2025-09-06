@@ -2,7 +2,7 @@ import WalletButton from "./WalletButton";
 
 export default function Header() {
   return (
-    <header className="bg-gray-100">
+    <header className="mb-8 mt-2">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           {/* Kiln Logo */}
