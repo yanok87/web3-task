@@ -31,6 +31,12 @@ export class MissingAllowanceError extends Error {
   }
 }
 
+export class InvalidAmountError extends Error {
+  constructor() {
+    super("Amount must be greater than zero");
+  }
+}
+
 export class AmountExceedsMaxDepositError extends Error {
   constructor() {
     super("Amount exceeds max deposit");
@@ -40,6 +46,7 @@ export class AmountExceedsMaxDepositError extends Error {
 /**
  * Deposit an amount of an asset into a given vault.
  *
+ * @throws {InvalidAmountError} if the amount is zero or negative
  * @throws {NotEnoughBalanceError} if the wallet does not have enough balance to deposit the amount
  * @throws {MissingAllowanceError} if the wallet does not have enough allowance to deposit the amount
  * @throws {AmountExceedsMaxDepositError} if the amount exceeds the max deposit
@@ -50,7 +57,7 @@ export async function deposit(
 ): Promise<Transaction> {
   if (amount <= 0n) {
     // Treat zero/negative as "nothing to do" — but build a tx anyway would be weird, so fail fast.
-    throw new AmountExceedsMaxDepositError();
+    throw new InvalidAmountError();
   }
 
   // 1) discover the vault's underlying ERC-20 asset
@@ -78,7 +85,7 @@ export async function deposit(
       address: vault,
       abi: erc4626Abi,
       functionName: "maxDeposit",
-      args: [wallet], // receiver = wallet (typical UX)
+      args: [wallet],
     }),
   ])) as [bigint, bigint, bigint];
 
