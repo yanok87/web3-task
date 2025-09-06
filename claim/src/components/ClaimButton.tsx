@@ -6,9 +6,7 @@ import {
 } from "wagmi";
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useClaimedNFTs } from "../contexts/ClaimedNFTsContext";
+import { useEffect, useState } from "react";
 
 interface ClaimButtonProps {
   id: string;
@@ -17,12 +15,8 @@ interface ClaimButtonProps {
 export default function ClaimButton({ id }: ClaimButtonProps) {
   const { address, chainId } = useAccount();
   const { writeContract, isPending, error, data: hash } = useWriteContract();
-  const queryClient = useQueryClient();
-  const {
-    markAsClaimed,
-    isClaimed: isClaimedInContext,
-    getTransactionHash,
-  } = useClaimedNFTs();
+  const [isClaimed, setIsClaimed] = useState(false);
+  const [txHash, setTxHash] = useState<string>("");
 
   // Wait for transaction confirmation
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -30,8 +24,8 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
       hash,
     });
 
-  // Check if user has already claimed this NFT
-  const { data: hasClaimed, isLoading: isLoadingClaimed } = useReadContract({
+  // Check contract for already claimed NFTs
+  const { data: hasClaimed } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
@@ -40,62 +34,27 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     functionName: "hasClaimed",
     args: address ? [address, BigInt(id)] : undefined,
     query: {
-      refetchOnWindowFocus: true,
+      enabled: !!address && !!chainId && isSupportedChain(chainId),
     },
   });
 
-  // Check user's balance for this NFT
-  const { data: balance, refetch: refetchBalance } = useReadContract({
-    address:
-      address && chainId && isSupportedChain(chainId)
-        ? getContractAddress(chainId, "ClaimableNFT")
-        : undefined,
-    abi: claimableNFTAbi,
-    functionName: "balanceOf",
-    args: address ? [address, BigInt(id)] : undefined,
-    query: {
-      refetchOnWindowFocus: true,
-    },
-  });
+  // Update local state when contract data changes
+  useEffect(() => {
+    if (hasClaimed !== undefined) {
+      setIsClaimed(hasClaimed);
+    }
+  }, [hasClaimed]);
 
-  // Debug logging
-  console.log(
-    `ClaimButton NFT ${id} - hasClaimed:`,
-    hasClaimed,
-    "balance:",
-    balance,
-    "address:",
-    address,
-    "isLoadingClaimed:",
-    isLoadingClaimed
-  );
-  console.log(`ClaimButton query config:`, {
-    address:
-      address && chainId && isSupportedChain(chainId)
-        ? getContractAddress(chainId, "ClaimableNFT")
-        : undefined,
-    functionName: "balanceOf",
-    args: address ? [address, BigInt(id)] : undefined,
-  });
-
-  // Let's also check what the actual contract address is
-  const claimButtonContractAddress =
-    address && chainId && isSupportedChain(chainId)
-      ? getContractAddress(chainId, "ClaimableNFT")
-      : undefined;
-  console.log(`ClaimButton contract address:`, claimButtonContractAddress);
-  console.log(`ClaimButton chainId:`, chainId);
-  console.log(
-    `ClaimButton isSupportedChain:`,
-    chainId ? isSupportedChain(chainId) : false
-  );
+  // Reset txHash when NFT ID changes
+  useEffect(() => {
+    setTxHash("");
+  }, [id]);
 
   const handleClaim = async () => {
     if (!address || !chainId) {
       alert("Please connect your wallet first");
       return;
     }
-
     try {
       const contractAddress = getContractAddress(chainId, "ClaimableNFT");
 
@@ -110,50 +69,13 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     }
   };
 
-  // Get transaction hash from context
-  const contextTxHash = getTransactionHash(id);
-
-  // Store transaction hash and refetch balance when transaction is confirmed
+  // Update local state when transaction is confirmed
   useEffect(() => {
     if (isConfirmed && hash) {
-      // Refetch the balance to show updated count immediately
-      refetchBalance();
-      // Invalidate all balance-related queries to ensure UI consistency
-      queryClient.invalidateQueries({
-        predicate: (query): boolean => {
-          // Invalidate all readContract queries with balanceOf function
-          if (query.queryKey[0] === "readContract") {
-            const queryConfig = query.queryKey[1];
-            if (
-              queryConfig &&
-              typeof queryConfig === "object" &&
-              "functionName" in queryConfig
-            ) {
-              return queryConfig.functionName === "balanceOf";
-            }
-          }
-          return false;
-        },
-      });
-
-      // Also invalidate all queries to be safe
-      queryClient.invalidateQueries();
-
-      console.log("Invalidated all queries after claim confirmation");
-      console.log("Current balance after refetch:", balance);
-
-      // Mark as claimed in context with transaction hash
-      markAsClaimed(id, hash);
-      console.log(`Marked NFT ${id} as claimed in context with tx hash:`, hash);
-
-      // Dispatch custom event to notify other components
-      window.dispatchEvent(
-        new CustomEvent("nftClaimed", {
-          detail: { tokenId: id, address, hash },
-        })
-      );
+      setIsClaimed(true);
+      setTxHash(hash);
     }
-  }, [isConfirmed, hash, refetchBalance, queryClient]);
+  }, [isConfirmed, hash]);
 
   // Don't show button if user is not connected
   if (!address) {
@@ -166,19 +88,6 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
       </button>
     );
   }
-
-  // Show loading state while checking claim status
-  if (isLoadingClaimed) {
-    return (
-      <button
-        disabled
-        className="w-full bg-gray-400 text-white py-1 px-3 text-sm cursor-not-allowed"
-      >
-        Checking...
-      </button>
-    );
-  }
-
   // Check if current chain is supported
   if (!chainId || !isSupportedChain(chainId)) {
     return (
@@ -191,12 +100,7 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     );
   }
 
-  // Check if NFT is claimed (prioritize context over blockchain)
-  const isClaimedByContext = isClaimedInContext(id);
-  const isClaimedByBlockchain = hasClaimed || (balance && balance > 0n);
-  const isClaimed = isClaimedByContext || isClaimedByBlockchain;
-
-  // Show claimed state if NFT is claimed (either by context or blockchain)
+  // Show claimed state if NFT is claimed
   if (isClaimed) {
     return (
       <div className="space-y-2">
@@ -208,16 +112,16 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
         </button>
 
         {/* Show stored transaction hash if available */}
-        {contextTxHash && (
+        {txHash && (
           <div className="text-xs text-center">
             <p className="text-gray-600 mb-1">Transaction Hash:</p>
             <a
-              href={`https://sepolia.basescan.org/tx/${contextTxHash}`}
+              href={`https://sepolia.basescan.org/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-500 hover:text-blue-700 underline break-all"
             >
-              {contextTxHash.slice(0, 10)}...{contextTxHash.slice(-8)}
+              {txHash.slice(0, 10)}...{txHash.slice(-8)}
             </a>
           </div>
         )}
@@ -239,18 +143,17 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
             : "Claim Now"}
       </button>
 
-      {/* Transaction Hash - Show active hash or stored hash */}
-      {(hash || contextTxHash) && (
+      {/* Transaction Hash - Show active hash */}
+      {hash && (
         <div className="text-xs text-center">
           <p className="text-gray-600 mb-1">Transaction Hash:</p>
           <a
-            href={`https://sepolia.basescan.org/tx/${hash || contextTxHash}`}
+            href={`https://sepolia.basescan.org/tx/${hash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-700 underline break-all"
           >
-            {(hash || contextTxHash)?.slice(0, 10)}...
-            {(hash || contextTxHash)?.slice(-8)}
+            {hash.slice(0, 10)}...{hash.slice(-8)}
           </a>
         </div>
       )}

@@ -2,7 +2,7 @@
 export const CONTRACT_ADDRESSES = {
   // Base Sepolia testnet
   [84532]: {
-    ClaimableNFT: "0xF21A01C1494263f1E308D55b39e5c7e1566e925d" as const,
+    ClaimableNFT: "0xFBB7C6d7e7F41D2a34Fcc860333bD86199E6c898" as const,
   },
   // Add other networks as needed
   // [1]: { // Ethereum mainnet

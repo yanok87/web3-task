@@ -1,11 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { fetchNFTById } from "../api";
 import ClaimButton from "./ClaimButton";
 import { useAccount, useReadContract } from "wagmi";
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
 import { useEffect, useState } from "react";
-import { useClaimedNFTs } from "../contexts/ClaimedNFTsContext";
 
 interface SelectedNFTProps {
   id: string;
@@ -13,9 +12,28 @@ interface SelectedNFTProps {
 
 export default function SelectedNFT({ id }: SelectedNFTProps) {
   const { address, chainId } = useAccount();
-  const queryClient = useQueryClient();
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { isClaimed: isClaimedInContext } = useClaimedNFTs();
+  const [isClaimed, setIsClaimed] = useState(false);
+
+  // Check contract for already claimed NFTs on mount
+  const { data: hasClaimed } = useReadContract({
+    address:
+      address && chainId && isSupportedChain(chainId)
+        ? getContractAddress(chainId, "ClaimableNFT")
+        : undefined,
+    abi: claimableNFTAbi,
+    functionName: "hasClaimed",
+    args: address ? [address, BigInt(id)] : undefined,
+    query: {
+      enabled: !!address && !!chainId && isSupportedChain(chainId),
+    },
+  });
+
+  // Update local state when contract data changes
+  useEffect(() => {
+    if (hasClaimed !== undefined) {
+      setIsClaimed(hasClaimed);
+    }
+  }, [hasClaimed]);
 
   const {
     data: nft,
@@ -25,89 +43,6 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
     queryKey: ["nft", id],
     queryFn: () => fetchNFTById(id),
   });
-
-  // Check user's balance for this specific NFT
-  const { data: balance, refetch: refetchBalance } = useReadContract({
-    address:
-      address && chainId && isSupportedChain(chainId)
-        ? getContractAddress(chainId, "ClaimableNFT")
-        : undefined,
-    abi: claimableNFTAbi,
-    functionName: "balanceOf",
-    args: address ? [address, BigInt(id)] : undefined,
-    query: {
-      refetchOnWindowFocus: true,
-      staleTime: 0, // Always consider data stale
-      gcTime: 0, // Don't cache the data
-    },
-  });
-
-  // Listen for NFT claimed events and refetch balance
-  useEffect(() => {
-    const handleNFTClaimed = (event: CustomEvent) => {
-      const { tokenId, address: claimedAddress } = event.detail;
-      console.log(
-        `SelectedNFT ${id} received claim event for token ${tokenId} by ${claimedAddress}`
-      );
-
-      // If this is the same NFT and same address, refetch the balance
-      if (tokenId === id && claimedAddress === address) {
-        console.log(`Refetching balance for NFT ${id}`);
-        console.log(`Current balance before refetch:`, balance);
-
-        // Force a new query by updating the refresh key
-        setRefreshKey((prev) => prev + 1);
-        console.log(`Updated refresh key to force new query`);
-
-        // Clear all queries and force fresh fetch
-        queryClient.clear();
-        console.log(`Cleared all queries`);
-
-        // Wait a bit then refetch
-        setTimeout(() => {
-          refetchBalance()
-            .then((result) => {
-              console.log(`Balance refetch result:`, result);
-            })
-            .catch((error) => {
-              console.error(`Balance refetch error:`, error);
-            });
-        }, 100);
-      }
-    };
-
-    window.addEventListener("nftClaimed", handleNFTClaimed as EventListener);
-
-    return () => {
-      window.removeEventListener(
-        "nftClaimed",
-        handleNFTClaimed as EventListener
-      );
-    };
-  }, [id, address, refetchBalance]);
-
-  // Debug logging
-  console.log(`SelectedNFT ${id} - balance:`, balance, "address:", address);
-  console.log(`SelectedNFT query config:`, {
-    address:
-      address && chainId && isSupportedChain(chainId)
-        ? getContractAddress(chainId, "ClaimableNFT")
-        : undefined,
-    functionName: "balanceOf",
-    args: address ? [address, BigInt(id)] : undefined,
-  });
-
-  // Let's also check what the actual contract address is
-  const contractAddress =
-    address && chainId && isSupportedChain(chainId)
-      ? getContractAddress(chainId, "ClaimableNFT")
-      : undefined;
-  console.log(`SelectedNFT contract address:`, contractAddress);
-  console.log(`SelectedNFT chainId:`, chainId);
-  console.log(
-    `SelectedNFT isSupportedChain:`,
-    chainId ? isSupportedChain(chainId) : false
-  );
 
   if (isLoading) {
     return (
@@ -137,9 +72,6 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
     );
   }
 
-  // Console log the returned object
-  console.log("NFT Data:", nft);
-
   // Convert IPFS URL to HTTP URL
   const getImageUrl = (url: string) => {
     if (url.startsWith("ipfs://")) {
@@ -164,12 +96,6 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             e.currentTarget.src =
               "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
           }}
-          onLoad={() => {
-            console.log(
-              "Image loaded successfully:",
-              getImageUrl(nft.metadata.image)
-            );
-          }}
         />
       </div>
 
@@ -191,12 +117,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             {nft.metadata.name}
           </h1>
           <p className="text-gray-500 text-xs">
-            You own{" "}
-            {address && chainId && isSupportedChain(chainId)
-              ? isClaimedInContext(id)
-                ? "1"
-                : (balance || 0n).toString()
-              : "0"}
+            You own {isClaimed ? "1" : "0"}
           </p>
         </div>
 
