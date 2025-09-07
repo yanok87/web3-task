@@ -36,17 +36,17 @@ export default function NFTGallery({ nfts, onSelectNFT }: NFTGalleryProps) {
       <h2 className="text-xl font-bold text-gray-900 mb-6">
         More from this collection
       </h2>
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {nfts.map((nft) => {
           const { loading, error } = getImageState(nft.id);
 
           return (
             <div
               key={nft.id}
-              className="flex-shrink-0 cursor-pointer transition-all duration-200"
+              className="cursor-pointer transition-all duration-200 hover:scale-105"
               onClick={() => onSelectNFT(nft.id)}
             >
-              <div className="w-48 h-48 overflow-hidden bg-gray-100 relative">
+              <div className="w-full aspect-square overflow-hidden bg-gray-100 relative">
                 {/* Loading Skeleton */}
                 {loading && !error && (
                   <div className="w-full h-full bg-gray-200 animate-pulse flex items-center justify-center">

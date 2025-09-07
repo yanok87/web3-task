@@ -67,7 +67,7 @@ export default function ClaimNFTPanel() {
         {selectedId && <SelectedNFT id={selectedId} />}
 
         {/* Company Info Box - Aligned with left part of SelectedNFT */}
-        <div className="mt-8 mb-10 flex flex-col lg:flex-row lg:gap-8">
+        <div className="mt-8 mb-14 flex flex-col lg:flex-row lg:gap-8">
           <div className="lg:w-1/2">
             <CompanyInfoBox />
           </div>
@@ -77,7 +77,7 @@ export default function ClaimNFTPanel() {
         {/* NFT Gallery - Show even while loading */}
         {nfts && nfts.length > 0 && (
           <NFTGallery
-            nfts={nfts}
+            nfts={nfts.filter((nft) => nft.id !== selectedId)}
             selectedId={selectedId}
             onSelectNFT={setSelectedId}
           />

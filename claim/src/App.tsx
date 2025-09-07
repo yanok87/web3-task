@@ -23,8 +23,10 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <div className="min-h-screen flex flex-col">
           <Header />
-          <main className="flex-1">
-            <ClaimNFTPanel />
+          <main className="flex-1 flex justify-center">
+            <div className="w-full max-w-6xl px-8">
+              <ClaimNFTPanel />
+            </div>
           </main>
           <Footer />
         </div>

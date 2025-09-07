@@ -70,18 +70,18 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
   return (
     <div className="flex flex-col lg:flex-row lg:gap-8">
       {/* Left Column - NFT Image */}
-      <div className="lg:w-1/2 flex items-start justify-center">
+      <div className="lg:w-1/2 flex items-start justify-center mb-8 lg:mb-0">
         <div className="relative w-full">
           {/* Loading Skeleton */}
           {imageLoading && !imageError && (
-            <div className="w-full h-96 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+            <div className="w-full h-96 bg-gray-200 animate-pulse flex items-center justify-center">
               <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
             </div>
           )}
 
           {/* Fallback Image */}
           {imageError && (
-            <div className="w-full h-96 bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-500">
+            <div className="w-full h-96 bg-gray-100 flex flex-col items-center justify-center text-gray-500">
               <svg
                 className="w-16 h-16 mb-4"
                 fill="currentColor"
@@ -103,7 +103,7 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             <img
               src={getImageUrl(nft.metadata.image)}
               alt={nft.metadata.name}
-              className={`w-full h-auto rounded-lg ${imageLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
+              className={`w-full h-auto ${imageLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
               onLoad={() => setImageLoading(false)}
               onError={() => {
                 setImageLoading(false);
