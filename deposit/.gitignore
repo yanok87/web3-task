@@ -12,6 +12,7 @@ coverage
 
 # logs
 logs
+*.log
 _.log
 report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
@@ -21,6 +22,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .env.test.local
 .env.production.local
 .env.local
+.env.*.local
 
 # caches
 .eslintcache
@@ -32,3 +34,20 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 
 # Finder (MacOS) folder config
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
