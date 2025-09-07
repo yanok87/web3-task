@@ -41,13 +41,13 @@ export default function WalletButton() {
     return (
       <div className="flex items-center space-x-4">
         {/* Chain Info */}
-        <span className="text-xs text-gray-600">
+        <span className="text-sm text-gray-600">
           {chainId === baseSepolia.id ? "Base Sepolia" : `Chain ${chainId}`}
         </span>
 
         {/* Balance */}
         {balance && (
-          <span className="text-xs text-gray-700">
+          <span className="text-sm text-gray-700">
             {parseFloat(formatUnits(balance.value, balance.decimals)).toFixed(
               10
             )}{" "}

@@ -1,4 +1,8 @@
-s # deposit
+# Deposit Task
+
+A TypeScript utility function for building ERC4626 vault deposit transactions with balance, allowance, and max deposit validation.
+
+## Getting Started
 
 To install dependencies:
 
