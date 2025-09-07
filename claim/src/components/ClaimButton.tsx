@@ -26,7 +26,7 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     });
 
   // Check contract for NFT balance
-  const { data: balance, refetch: refetchBalance } = useReadContract({
+  const { data: NFTbalance, refetch: refetchNFTbalance } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
@@ -68,13 +68,16 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
     if (isConfirmed && hash) {
       setTxHash(hash);
 
-      // Refetch NFTbalance immediately
-      refetchBalance();
+      // Wait a moment for blockchain state to update, then refresh
+      setTimeout(() => {
+        // Invalidate all queries to trigger refetch
+        queryClient.invalidateQueries();
 
-      // Invalidate all wagmi queries to refresh wallet balance and other data
-      queryClient.invalidateQueries();
+        // Explicitly refetch the NFT balance
+        refetchNFTbalance();
+      }, 1000); // 1 second delay to allow blockchain state to update
     }
-  }, [isConfirmed, hash, queryClient, refetchBalance]);
+  }, [isConfirmed, hash, queryClient, refetchNFTbalance]);
 
   // Don't show button if user is not connected
   if (!address) {
@@ -100,7 +103,7 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
   }
 
   // Show claimed state if NFT is claimed
-  if (balance && balance > 0n) {
+  if (NFTbalance && NFTbalance > 0n) {
     return (
       <div className="space-y-2">
         <button
@@ -142,32 +145,19 @@ export default function ClaimButton({ id }: ClaimButtonProps) {
             : "Claim Now"}
       </button>
 
-      {/* Transaction Hash - Show active hash */}
-      {hash && (
-        <div className="text-xs text-center">
-          <p className="text-gray-600 mb-1">Transaction Hash:</p>
-          <a
-            href={`https://sepolia.basescan.org/tx/${hash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-700 underline break-all"
-          >
-            {hash.slice(0, 10)}...{hash.slice(-8)}
-          </a>
-        </div>
-      )}
-
-      {/* Success Message */}
-      {isConfirmed && (
-        <p className="text-green-600 text-xs text-center">
-          ✓ Successfully claimed! Check your wallet.
-        </p>
-      )}
-
       {error && (
-        <p className="text-red-500 text-xs text-center">
-          Error: {error.message}
-        </p>
+        <div className="text-red-500 text-xs text-center space-y-1">
+          <p className="font-medium">Transaction Failed</p>
+          <p className="text-gray-600">
+            {error.message.includes("User rejected")
+              ? "You rejected the transaction in your wallet"
+              : error.message.includes("insufficient funds")
+                ? "Insufficient funds for gas fees"
+                : error.message.includes("execution reverted")
+                  ? "Transaction reverted - NFT may already be claimed"
+                  : error.message}
+          </p>
+        </div>
       )}
     </div>
   );

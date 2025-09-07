@@ -13,7 +13,7 @@ export default function WalletButton() {
   const { data: balance } = useBalance({
     address: address,
   });
-  const { connect, connectors, isPending } = useConnect();
+  const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
 
@@ -21,14 +21,10 @@ export default function WalletButton() {
     // Connect to the first available connector (MetaMask or injected)
     const connector = connectors[0];
     if (connector) {
-      try {
-        await connect({ connector });
-        // After connecting, switch to Base Sepolia if not already on it
-        if (chainId !== baseSepolia.id) {
-          await switchChain({ chainId: baseSepolia.id });
-        }
-      } catch (error) {
-        console.error("Connection failed:", error);
+      await connect({ connector });
+      // After connecting, switch to Base Sepolia if not already on it
+      if (chainId !== baseSepolia.id) {
+        await switchChain({ chainId: baseSepolia.id });
       }
     }
   };
@@ -83,12 +79,19 @@ export default function WalletButton() {
   }
 
   return (
-    <button
-      onClick={handleConnect}
-      disabled={isPending}
-      className="bg-gray-800 hover:bg-gray-900 text-white py-1 px-3 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {isPending ? "Connecting..." : "Connect Wallet"}
-    </button>
+    <div className="flex flex-col items-center space-y-2">
+      <button
+        onClick={handleConnect}
+        disabled={isPending}
+        className="bg-gray-800 hover:bg-gray-900 text-white py-1 px-3 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isPending ? "Connecting..." : "Connect Wallet"}
+      </button>
+      {error && (
+        <div className="text-red-500 text-xs text-center max-w-xs">
+          {error.message}
+        </div>
+      )}
+    </div>
   );
 }

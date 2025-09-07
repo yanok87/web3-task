@@ -5,6 +5,7 @@ import { useAccount, useReadContract } from "wagmi";
 import { getContractAddress, isSupportedChain } from "../config/contracts";
 import { claimableNFTAbi } from "../abi/ClaimableNFT";
 import { getImageUrl } from "../utils/ipfs";
+import { useState } from "react";
 
 interface SelectedNFTProps {
   id: string;
@@ -12,9 +13,11 @@ interface SelectedNFTProps {
 
 export default function SelectedNFT({ id }: SelectedNFTProps) {
   const { address, chainId } = useAccount();
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   // Check contract for NFT balance on mount
-  const { data: balance } = useReadContract({
+  const { data: NFTbalance, error: NFTbalanceError } = useReadContract({
     address:
       address && chainId && isSupportedChain(chainId)
         ? getContractAddress(chainId, "ClaimableNFT")
@@ -68,19 +71,51 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
     <div className="flex flex-col lg:flex-row lg:gap-8">
       {/* Left Column - NFT Image */}
       <div className="lg:w-1/2 flex items-start justify-center">
-        <img
-          src={getImageUrl(nft.metadata.image)}
-          alt={nft.metadata.name}
-          className="w-full h-auto"
-          onError={(e) => {
-            console.error(
-              "Image failed to load:",
-              getImageUrl(nft.metadata.image)
-            );
-            e.currentTarget.src =
-              "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBmb3VuZDwvdGV4dD48L3N2Zz4=";
-          }}
-        />
+        <div className="relative w-full">
+          {/* Loading Skeleton */}
+          {imageLoading && !imageError && (
+            <div className="w-full h-96 bg-gray-200 animate-pulse rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          )}
+
+          {/* Fallback Image */}
+          {imageError && (
+            <div className="w-full h-96 bg-gray-100 rounded-lg flex flex-col items-center justify-center text-gray-500">
+              <svg
+                className="w-16 h-16 mb-4"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <p className="text-sm font-medium">Image not available</p>
+              <p className="text-xs text-gray-400 mt-1">NFT #{id}</p>
+            </div>
+          )}
+
+          {/* Actual Image */}
+          {!imageError && (
+            <img
+              src={getImageUrl(nft.metadata.image)}
+              alt={nft.metadata.name}
+              className={`w-full h-auto rounded-lg ${imageLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
+              onLoad={() => setImageLoading(false)}
+              onError={() => {
+                setImageLoading(false);
+                setImageError(true);
+                console.error(
+                  "Image failed to load:",
+                  getImageUrl(nft.metadata.image)
+                );
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {/* Right Column - NFT Details */}
@@ -101,7 +136,12 @@ export default function SelectedNFT({ id }: SelectedNFTProps) {
             {nft.metadata.name}
           </h1>
           <p className="text-gray-500 text-xs">
-            You own {balance && balance > 0n ? "1" : "0"}
+            You own {NFTbalance && NFTbalance > 0n ? "1" : "0"}
+            {NFTbalanceError && (
+              <span className="text-red-500 ml-2">
+                (Unable to check ownership)
+              </span>
+            )}
           </p>
         </div>
 
